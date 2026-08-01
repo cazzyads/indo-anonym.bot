@@ -22,13 +22,11 @@ from database import *
 
 
 
-TOKEN=os.getenv(
-    "BOT_TOKEN"
-)
+TOKEN = os.getenv("BOT_TOKEN")
 
 
 
-menu=InlineKeyboardMarkup([
+menu = InlineKeyboardMarkup([
 
 [
 InlineKeyboardButton(
@@ -39,15 +37,15 @@ callback_data="search"
 
 [
 InlineKeyboardButton(
-"🌍 Pilih Negara",
+"🌍 Negara",
 callback_data="country"
 )
 ],
 
 [
 InlineKeyboardButton(
-"❌ Stop Chat",
-callback_data="stop"
+"❌ End Chat",
+callback_data="end"
 )
 ]
 
@@ -55,7 +53,7 @@ callback_data="stop"
 
 
 
-country_menu=InlineKeyboardMarkup([
+countries = InlineKeyboardMarkup([
 
 [
 InlineKeyboardButton(
@@ -96,11 +94,9 @@ callback_data="Cambodia"
 
 
 
-
 async def start(update,context):
 
-
-    user=update.effective_user
+    user = update.effective_user
 
 
     add_user(user.id)
@@ -111,11 +107,16 @@ async def start(update,context):
 f"""
 👋 Halo {user.first_name}
 
-💙 Welcome To Anonymous Match
+💙 ANONYMOUS MATCH
 
 Cari teman baru secara anonim.
 
-Gunakan tombol dibawah.
+Command:
+
+/next - cari teman
+/end - akhiri chat
+
+Silahkan pilih menu:
 """,
 
 reply_markup=menu
@@ -124,34 +125,201 @@ reply_markup=menu
 
 
 
+async def search_match(update,context):
 
-async def button(update,context):
-
-
-    query=update.callback_query
-
-    await query.answer()
+    user = update.effective_user.id
 
 
-    user=query.from_user.id
+    set_search(
+        user,
+        1
+    )
+
+
+    partner = find_match(
+        user
+    )
 
 
 
-    if query.data=="country":
+    if partner:
 
 
-        await query.message.reply_text(
+        set_search(user,0)
+        set_search(partner,0)
 
-            "Pilih negara kamu:",
 
-            reply_markup=country_menu
+        set_partner(user,partner)
+        set_partner(partner,user)
+
+
+
+        await update.message.reply_text(
+
+"""
+🎉 MATCH DITEMUKAN!
+
+Kamu sudah terhubung.
+
+Mulai chat sekarang.
+"""
+)
+
+
+        await context.bot.send_message(
+
+            partner,
+
+"""
+🎉 MATCH DITEMUKAN!
+
+Kamu sudah terhubung.
+
+Mulai chat sekarang.
+"""
+)
+
+
+    else:
+
+
+        await update.message.reply_text(
+
+"""
+🔎 Sedang mencari teman...
+
+Tunggu pengguna lain.
+"""
+)
+
+
+
+
+
+async def next_match(update,context):
+
+
+    user = update.effective_user.id
+
+
+    old = get_partner(user)
+
+
+
+    if old:
+
+
+        remove_partner(user)
+        remove_partner(old)
+
+
+
+        await context.bot.send_message(
+            old,
+"""
+🔄 Teman kamu mencari pasangan baru.
+"""
+        )
+
+
+
+    await search_match(update,context)
+
+
+
+
+
+async def end_chat(update,context):
+
+
+    user = update.effective_user.id
+
+
+    partner = get_partner(user)
+
+
+
+    if partner:
+
+
+        remove_partner(user)
+        remove_partner(partner)
+
+
+
+        await context.bot.send_message(
+
+            partner,
+
+"""
+❌ Chat sudah diakhiri.
+Gunakan /next untuk mencari teman baru.
+"""
+
+        )
+
+
+        await update.message.reply_text(
+
+"""
+❌ Chat selesai.
+Gunakan /next untuk mencari teman baru.
+"""
+
+        )
+
+
+    else:
+
+
+        await update.message.reply_text(
+
+"""
+Tidak ada chat aktif.
+"""
 
         )
 
 
 
 
-    elif query.data in [
+
+async def button(update,context):
+
+
+    q = update.callback_query
+
+    await q.answer()
+
+
+    user = q.from_user.id
+
+
+
+    if q.data=="search":
+
+        await search_match(
+            update,
+            context
+        )
+
+
+
+    elif q.data=="country":
+
+
+        await q.message.reply_text(
+
+            "Pilih negara:",
+
+            reply_markup=countries
+
+        )
+
+
+
+
+    elif q.data in [
 
         "Indonesia",
         "Malaysia",
@@ -164,18 +332,16 @@ async def button(update,context):
 
         save_country(
             user,
-            query.data
+            q.data
         )
 
 
-        await query.message.reply_text(
+        await q.message.reply_text(
 
 f"""
 ✅ Negara dipilih:
 
-🌍 {query.data}
-
-Sekarang klik 🔍 Cari Match
+🌍 {q.data}
 """,
 
 reply_markup=menu
@@ -185,137 +351,14 @@ reply_markup=menu
 
 
 
+    elif q.data=="end":
 
-    elif query.data=="search":
 
-
-        set_search(
-            user,
-            1
+        await end_chat(
+            update,
+           context
         )
 
-
-        partner=find_match(
-            user
-        )
-
-
-
-        if partner:
-
-
-            set_search(
-                user,
-                0
-            )
-
-
-            set_search(
-                partner,
-                0
-            )
-
-
-            set_partner(
-                user,
-                partner
-            )
-
-
-            set_partner(
-                partner,
-                user
-            )
-
-
-            await query.message.reply_text(
-
-"""
-🎉 MATCH BERHASIL!
-
-Kamu sudah terhubung.
-
-Silahkan mulai chat.
-""",
-
-reply_markup=menu
-
-)
-
-
-
-            await context.bot.send_message(
-
-                partner,
-
-"""
-🎉 MATCH BERHASIL!
-
-Kamu sudah terhubung.
-
-Silahkan mulai chat.
-"""
-
-)
-
-
-        else:
-
-
-            await query.message.reply_text(
-
-"""
-🔎 Mencari teman...
-
-Tunggu pengguna lain.
-""",
-
-reply_markup=menu
-
-)
-
-
-
-
-    elif query.data=="stop":
-
-
-        partner=get_partner(user)
-
-
-
-        remove_partner(user)
-
-
-
-        if partner:
-
-
-            remove_partner(partner)
-
-
-            await context.bot.send_message(
-
-                partner,
-
-"""
-❌ Teman mengakhiri chat.
-
-Klik 🔍 Cari Match untuk mencari teman baru.
-"""
-
-)
-
-
-        await query.message.reply_text(
-
-"""
-❌ Chat dihentikan.
-""",
-
-reply_markup=menu
-
-)
 
 
 
@@ -323,12 +366,13 @@ reply_markup=menu
 async def relay(update,context):
 
 
-    user=update.effective_user.id
+    user = update.effective_user.id
 
 
-    partner=get_partner(
+    partner = get_partner(
         user
     )
+
 
 
     if partner:
@@ -349,12 +393,12 @@ async def relay(update,context):
         await update.message.reply_text(
 
 """
-Kamu belum memiliki pasangan.
+Kamu belum mempunyai pasangan.
 
-Klik 🔍 Cari Match.
+Gunakan /next.
 """
 
-)
+        )
 
 
 
@@ -366,7 +410,7 @@ def main():
     init_db()
 
 
-    app=Application.builder().token(TOKEN).build()
+    app = Application.builder().token(TOKEN).build()
 
 
 
@@ -374,6 +418,22 @@ def main():
         CommandHandler(
             "start",
             start
+        )
+    )
+
+
+    app.add_handler(
+        CommandHandler(
+            "next",
+            next_match
+        )
+    )
+
+
+    app.add_handler(
+        CommandHandler(
+            "end",
+            end_chat
         )
     )
 
@@ -400,7 +460,6 @@ def main():
 
 
     app.run_polling()
-
 
 
 
