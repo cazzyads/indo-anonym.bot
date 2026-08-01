@@ -1,238 +1,373 @@
 import os
 
+
 from telegram import (
     Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup
 )
 
+
 from telegram.ext import (
     Application,
     CommandHandler,
     CallbackQueryHandler,
-    ContextTypes
+    MessageHandler,
+    ContextTypes,
+    filters
 )
+
 
 from database import *
 
 
-TOKEN=os.getenv("BOT_TOKEN")
+
+TOKEN=os.getenv(
+    "BOT_TOKEN"
+)
 
 
-menu = InlineKeyboardMarkup([
+
+menu=InlineKeyboardMarkup([
+
 [
 InlineKeyboardButton(
 "🔍 Cari Match",
 callback_data="search"
-),
+)
+],
 
+[
 InlineKeyboardButton(
-"🌍 Negara",
+"🌍 Pilih Negara",
 callback_data="country"
 )
 ],
+
 [
 InlineKeyboardButton(
-"❌ Stop",
+"❌ Stop Chat",
 callback_data="stop"
 )
 ]
+
 ])
 
 
-countries = InlineKeyboardMarkup([
+
+country_menu=InlineKeyboardMarkup([
+
 [
 InlineKeyboardButton(
 "🇮🇩 Indonesia",
-callback_data="ID"
-),
-InlineKeyboardButton(
-"🇲🇾 Malaysia",
-callback_data="MY"
+callback_data="Indonesia"
 )
 ],
+
+[
+InlineKeyboardButton(
+"🇲🇾 Malaysia",
+callback_data="Malaysia"
+)
+],
+
 [
 InlineKeyboardButton(
 "🇸🇬 Singapore",
-callback_data="SG"
-),
-InlineKeyboardButton(
-"🇹🇭 Thailand",
-callback_data="TH"
+callback_data="Singapore"
 )
 ],
+
+[
+InlineKeyboardButton(
+"🇹🇭 Thailand",
+callback_data="Thailand"
+)
+],
+
 [
 InlineKeyboardButton(
 "🇰🇭 Cambodia",
-callback_data="KH"
+callback_data="Cambodia"
 )
 ]
+
 ])
 
 
 
-async def start(update:Update,context:ContextTypes.DEFAULT_TYPE):
+
+async def start(update,context):
+
 
     user=update.effective_user
+
 
     add_user(user.id)
 
 
     await update.message.reply_text(
+
 f"""
 👋 Halo {user.first_name}
 
-💙 Welcome to Indo Anonymous Match
+💙 Welcome To Anonymous Match
 
-Temukan teman baru secara anonim.
+Cari teman baru secara anonim.
 
-Gunakan tombol dibawah:
+Gunakan tombol dibawah.
 """,
+
 reply_markup=menu
+
 )
+
 
 
 
 async def button(update,context):
 
-    q=update.callback_query
 
-    await q.answer()
+    query=update.callback_query
 
-
-    uid=q.from_user.id
+    await query.answer()
 
 
-
-    # PILIH NEGARA
-
-    if q.data=="country":
-
-        await q.message.reply_text(
-"""
-🌍 Pilih negara kamu:
-""",
-reply_markup=countries
-)
+    user=query.from_user.id
 
 
 
-    # SIMPAN NEGARA
-
-    elif q.data in [
-        "ID",
-        "MY",
-        "SG",
-        "TH",
-        "KH"
-    ]:
+    if query.data=="country":
 
 
-        data={
-        "ID":"🇮🇩 Indonesia",
-        "MY":"🇲🇾 Malaysia",
-        "SG":"🇸🇬 Singapore",
-        "TH":"🇹🇭 Thailand",
-        "KH":"🇰🇭 Cambodia"
-        }
+        await query.message.reply_text(
 
+            "Pilih negara kamu:",
 
-        save_country(
-            uid,
-            data[q.data]
+            reply_markup=country_menu
+
         )
 
 
-        await q.message.reply_text(
+
+
+    elif query.data in [
+
+        "Indonesia",
+        "Malaysia",
+        "Singapore",
+        "Thailand",
+        "Cambodia"
+
+    ]:
+
+
+        save_country(
+            user,
+            query.data
+        )
+
+
+        await query.message.reply_text(
+
 f"""
-✅ Negara tersimpan
+✅ Negara dipilih:
 
-{data[q.data]}
+🌍 {query.data}
+
+Sekarang klik 🔍 Cari Match
 """,
+
 reply_markup=menu
+
 )
 
 
 
-    # CARI MATCH
-
-    elif q.data=="search":
 
 
-        set_search(uid,1)
+    elif query.data=="search":
 
 
-        match=find_match(uid)
+        set_search(
+            user,
+            1
+        )
 
 
-
-        if match:
-
-            set_search(uid,0)
-
-            set_search(match,0)
+        partner=find_match(
+            user
+        )
 
 
 
-            await q.message.reply_text(
+        if partner:
+
+
+            set_search(
+                user,
+                0
+            )
+
+
+            set_search(
+                partner,
+                0
+            )
+
+
+            set_partner(
+                user,
+                partner
+            )
+
+
+            set_partner(
+                partner,
+                user
+            )
+
+
+            await query.message.reply_text(
+
 """
-🎉 MATCH DITEMUKAN
+🎉 MATCH BERHASIL!
 
-Kamu sudah mendapatkan teman baru.
+Kamu sudah terhubung.
 
-Silakan mulai ngobrol 😊
-"""
+Silahkan mulai chat.
+""",
+
+reply_markup=menu
+
 )
+
 
 
             await context.bot.send_message(
-                match,
-"""
-🎉 MATCH DITEMUKAN
 
-Ada teman baru yang ingin ngobrol dengan kamu 😊
+                partner,
+
 """
+🎉 MATCH BERHASIL!
+
+Kamu sudah terhubung.
+
+Silahkan mulai chat.
+"""
+
 )
 
 
         else:
 
 
-            await q.message.reply_text(
+            await query.message.reply_text(
+
 """
 🔎 Mencari teman...
 
-Tunggu pengguna lain bergabung.
+Tunggu pengguna lain.
 """,
+
 reply_markup=menu
+
 )
 
 
 
 
-    # STOP
+    elif query.data=="stop":
 
 
-    elif q.data=="stop":
-
-        set_search(uid,0)
+        partner=get_partner(user)
 
 
-        await q.message.reply_text(
+
+        remove_partner(user)
+
+
+
+        if partner:
+
+
+            remove_partner(partner)
+
+
+            await context.bot.send_message(
+
+                partner,
+
 """
-❌ Pencarian dihentikan.
-""",
-reply_markup=menu
+❌ Teman mengakhiri chat.
+
+Klik 🔍 Cari Match untuk mencari teman baru.
+"""
+
 )
+
+
+        await query.message.reply_text(
+
+"""
+❌ Chat dihentikan.
+""",
+
+reply_markup=menu
+
+)
+
+
+
+
+async def relay(update,context):
+
+
+    user=update.effective_user.id
+
+
+    partner=get_partner(
+        user
+    )
+
+
+    if partner:
+
+
+        await context.bot.send_message(
+
+            partner,
+
+            update.message.text
+
+        )
+
+
+    else:
+
+
+        await update.message.reply_text(
+
+"""
+Kamu belum memiliki pasangan.
+
+Klik 🔍 Cari Match.
+"""
+
+)
+
+
 
 
 
 def main():
 
+
     init_db()
 
 
     app=Application.builder().token(TOKEN).build()
+
 
 
     app.add_handler(
@@ -244,8 +379,19 @@ def main():
 
 
     app.add_handler(
-        CallbackQueryHandler(button)
+        CallbackQueryHandler(
+            button
+        )
     )
+
+
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            relay
+        )
+    )
+
 
 
     print(
@@ -257,5 +403,7 @@ def main():
 
 
 
+
 if __name__=="__main__":
+
     main()
