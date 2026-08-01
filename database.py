@@ -9,6 +9,7 @@ conn = sqlite3.connect(
 cursor = conn.cursor()
 
 
+
 def init_db():
 
     cursor.execute("""
@@ -83,12 +84,11 @@ def find_match(user_id):
         (user_id,)
     )
 
-    result = cursor.fetchone()
+    data = cursor.fetchone()
 
 
-    if result:
-        return result[0]
-
+    if data:
+        return data[0]
 
     return None
 
@@ -120,12 +120,11 @@ def get_partner(user_id):
         (user_id,)
     )
 
-    result = cursor.fetchone()
+    data = cursor.fetchone()
 
 
-    if result:
-        return result[0]
-
+    if data:
+        return data[0]
 
     return 0
 
@@ -144,3 +143,46 @@ def remove_partner(user_id):
     )
 
     conn.commit()
+
+
+
+# =================
+# STATISTIK BOT
+# =================
+
+
+def total_users():
+
+    cursor.execute(
+        "SELECT COUNT(*) FROM users"
+    )
+
+    return cursor.fetchone()[0]
+
+
+
+def searching_users():
+
+    cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM users
+        WHERE searching=1
+        """
+    )
+
+    return cursor.fetchone()[0]
+
+
+
+def active_chat():
+
+    cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM users
+        WHERE partner != 0
+        """
+    )
+
+    return cursor.fetchone()[0] // 2
