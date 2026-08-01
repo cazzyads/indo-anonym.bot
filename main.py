@@ -1,11 +1,9 @@
 import os
 
-
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup
 )
-
 
 from telegram.ext import (
     Application,
@@ -15,84 +13,72 @@ from telegram.ext import (
     filters
 )
 
-
 from database import *
-
 
 
 TOKEN = os.getenv("BOT_TOKEN")
 
 
-
+# MENU UTAMA
 menu = InlineKeyboardMarkup([
-
-[
-InlineKeyboardButton(
-"🔍 Cari Match",
-callback_data="search"
-)
-],
-
-[
-InlineKeyboardButton(
-"🌍 Negara",
-callback_data="country"
-)
-],
-
-[
-InlineKeyboardButton(
-"❌ End Chat",
-callback_data="end"
-)
-]
-
+    [
+        InlineKeyboardButton(
+            "🔍 Cari Match",
+            callback_data="search"
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "🌍 Negara",
+            callback_data="country"
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "❌ End Chat",
+            callback_data="end"
+        )
+    ]
 ])
 
 
-
+# MENU NEGARA
 country_menu = InlineKeyboardMarkup([
-
-[
-InlineKeyboardButton(
-"🇮🇩 Indonesia",
-callback_data="Indonesia"
-)
-],
-
-[
-InlineKeyboardButton(
-"🇲🇾 Malaysia",
-callback_data="Malaysia"
-)
-],
-
-[
-InlineKeyboardButton(
-"🇸🇬 Singapore",
-callback_data="Singapore"
-)
-],
-
-[
-InlineKeyboardButton(
-"🇹🇭 Thailand",
-callback_data="Thailand"
-)
-],
-
-[
-InlineKeyboardButton(
-"🇰🇭 Cambodia",
-callback_data="Cambodia"
-)
-]
-
+    [
+        InlineKeyboardButton(
+            "🇮🇩 Indonesia",
+            callback_data="Indonesia"
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "🇲🇾 Malaysia",
+            callback_data="Malaysia"
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "🇸🇬 Singapore",
+            callback_data="Singapore"
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "🇹🇭 Thailand",
+            callback_data="Thailand"
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "🇰🇭 Cambodia",
+            callback_data="Cambodia"
+        )
+    ]
 ])
 
 
 
-async def start(update,context):
+async def start(update, context):
 
     user = update.effective_user
 
@@ -100,7 +86,6 @@ async def start(update,context):
 
 
     await update.message.reply_text(
-
 f"""
 💙 INDOANONYM BOT
 
@@ -110,41 +95,34 @@ Temukan teman baru secara anonymous.
 
 Command:
 
-/next - Cari teman baru
-/end - Akhiri chat
+/next → Cari teman baru
+/end → Akhiri chat
 
 
-Gunakan menu dibawah:
+Silahkan gunakan menu:
 """,
-
-reply_markup=menu
-
-)
+        reply_markup=menu
+    )
 
 
 
-async def search_match(update,context):
-
+async def search_match(update, context):
 
     if update.callback_query:
 
         user = update.callback_query.from_user.id
 
-        reply = update.callback_query.message.reply_text
-
+        send = update.callback_query.message.reply_text
 
     else:
 
         user = update.effective_user.id
 
-        reply = update.message.reply_text
+        send = update.message.reply_text
 
 
 
-    set_search(
-        user,
-        1
-    )
+    set_search(user,1)
 
 
     partner = find_match(user)
@@ -155,18 +133,15 @@ async def search_match(update,context):
 
 
         set_search(user,0)
-
         set_search(partner,0)
 
 
         set_partner(user,partner)
-
         set_partner(partner,user)
 
 
 
-        await reply(
-
+        await send(
 """
 🎉 MATCH DITEMUKAN!
 
@@ -174,59 +149,59 @@ Kamu sudah terhubung.
 
 Silahkan mulai chat 💬
 """
-
         )
 
 
         await context.bot.send_message(
-
             partner,
-
 """
 🎉 MATCH DITEMUKAN!
 
 Kamu sudah terhubung.
 
 Silahkan mulai chat 💬
-"""
-
+""",
+            reply_markup=menu
         )
-
 
 
     else:
 
 
-        await reply(
-
+        await send(
 """
 🔎 Sedang mencari teman...
 
-Tunggu pengguna lain.
-"""
-
+Tunggu pengguna lain bergabung.
+""",
+            reply_markup=menu
         )
 
 
 
-
-
-async def next_match(update,context):
-
+async def next_match(update, context):
 
     user = update.effective_user.id
 
 
-    partner=get_partner(user)
+    old_partner = get_partner(user)
 
 
-
-    if partner:
+    if old_partner:
 
         remove_partner(user)
+        remove_partner(old_partner)
 
-        remove_partner(partner)
 
+        await context.bot.send_message(
+            old_partner,
+"""
+🔄 Teman kamu mencari pasangan baru.
+
+Chat selesai.
+""",
+            reply_markup=menu
+        )
 
 
     await search_match(
@@ -236,15 +211,12 @@ async def next_match(update,context):
 
 
 
+async def end_chat(update, context):
+
+    user = update.effective_user.id
 
 
-async def end_chat(update,context):
-
-
-    user=update.effective_user.id
-
-
-    partner=get_partner(user)
+    partner = get_partner(user)
 
 
 
@@ -252,31 +224,27 @@ async def end_chat(update,context):
 
 
         remove_partner(user)
-
         remove_partner(partner)
 
 
-
         await context.bot.send_message(
-
             partner,
-
 """
 ❌ Chat telah berakhir.
 
-Gunakan /next untuk mencari teman baru.
-"""
-
+Mau mencari teman baru?
+""",
+            reply_markup=menu
         )
 
 
-
         await update.message.reply_text(
-
 """
 ❌ Chat selesai.
-"""
 
+Mau mencari teman baru?
+""",
+            reply_markup=menu
         )
 
 
@@ -284,30 +252,28 @@ Gunakan /next untuk mencari teman baru.
 
 
         await update.message.reply_text(
-
 """
-Tidak ada chat aktif.
-"""
+Kamu belum memiliki pasangan.
 
+Silahkan cari teman baru.
+""",
+            reply_markup=menu
         )
 
 
 
+async def button(update, context):
+
+    query = update.callback_query
+
+    await query.answer()
 
 
-async def button(update,context):
-
-
-    q=update.callback_query
-
-    await q.answer()
-
-
-    user=q.from_user.id
+    user = query.from_user.id
 
 
 
-    if q.data=="search":
+    if query.data == "search":
 
         await search_match(
             update,
@@ -316,52 +282,43 @@ async def button(update,context):
 
 
 
-    elif q.data=="country":
+    elif query.data == "country":
 
 
-        await q.message.reply_text(
-
+        await query.message.reply_text(
             "🌍 Pilih negara kamu:",
-
             reply_markup=country_menu
-
         )
 
 
 
-    elif q.data in [
-
+    elif query.data in [
         "Indonesia",
         "Malaysia",
         "Singapore",
         "Thailand",
         "Cambodia"
-
     ]:
 
 
         save_country(
             user,
-            q.data
+            query.data
         )
 
 
-        await q.message.reply_text(
-
+        await query.message.reply_text(
 f"""
-✅ Negara berhasil dipilih
+✅ Negara tersimpan
 
-🌍 {q.data}
+🌍 {query.data}
 """,
-
-reply_markup=menu
-
-)
+            reply_markup=menu
+        )
 
 
 
-    elif q.data=="end":
-
+    elif query.data == "end":
 
         await end_chat(
             update,
@@ -370,15 +327,12 @@ reply_markup=menu
 
 
 
+async def relay(update, context):
+
+    user = update.effective_user.id
 
 
-async def relay(update,context):
-
-
-    user=update.effective_user.id
-
-
-    partner=get_partner(user)
+    partner = get_partner(user)
 
 
 
@@ -386,11 +340,8 @@ async def relay(update,context):
 
 
         await context.bot.send_message(
-
             partner,
-
             update.message.text
-
         )
 
 
@@ -398,26 +349,22 @@ async def relay(update,context):
 
 
         await update.message.reply_text(
-
 """
 Kamu belum memiliki pasangan.
 
-Klik 🔍 Cari Match atau /next
-"""
-
+Klik 🔍 Cari Match.
+""",
+            reply_markup=menu
         )
-
-
 
 
 
 def main():
 
-
     init_db()
 
 
-    app=Application.builder().token(TOKEN).build()
+    app = Application.builder().token(TOKEN).build()
 
 
 
@@ -460,6 +407,7 @@ def main():
     )
 
 
+
     print(
         "💙 INDOANONYM BOT ONLINE"
     )
@@ -469,7 +417,6 @@ def main():
 
 
 
-
-if __name__=="__main__":
+if __name__ == "__main__":
 
     main()
