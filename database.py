@@ -78,18 +78,17 @@ def find_match(user_id):
         FROM users
         WHERE searching=1
         AND id != ?
-
         LIMIT 1
         """,
         (user_id,)
     )
 
+    result = cursor.fetchone()
 
-    data = cursor.fetchone()
 
+    if result:
+        return result[0]
 
-    if data:
-        return data[0]
 
     return None
 
@@ -121,12 +120,11 @@ def get_partner(user_id):
         (user_id,)
     )
 
+    result = cursor.fetchone()
 
-    data = cursor.fetchone()
 
-
-    if data:
-        return data[0]
+    if result:
+        return result[0]
 
 
     return 0
@@ -140,7 +138,6 @@ def remove_partner(user_id):
         UPDATE users
         SET partner=0,
         searching=0
-
         WHERE id=?
         """,
         (user_id,)
