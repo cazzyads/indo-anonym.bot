@@ -11,6 +11,7 @@ def init_db():
         name TEXT,
         age TEXT,
         gender TEXT,
+        country TEXT,
         bio TEXT,
         searching INTEGER DEFAULT 0
     )
@@ -27,16 +28,32 @@ def add_user(user_id):
 
 
 def save_profile(user_id,name,age,gender,bio):
+
     cursor.execute("""
-    UPDATE users 
+    UPDATE users
     SET name=?, age=?, gender=?, bio=?
     WHERE id=?
-    """,(name,age,gender,bio,user_id))
+    """,
+    (name,age,gender,bio,user_id))
 
     conn.commit()
 
 
+def save_country(user_id,country):
+
+    cursor.execute("""
+    UPDATE users
+    SET country=?
+    WHERE id=?
+    """,
+    (country,user_id))
+
+    conn.commit()
+
+
+
 def get_profile(user_id):
+
     cursor.execute(
         "SELECT * FROM users WHERE id=?",
         (user_id,)
@@ -45,12 +62,16 @@ def get_profile(user_id):
     return cursor.fetchone()
 
 
+
 def set_search(user_id,status):
+
     cursor.execute(
         "UPDATE users SET searching=? WHERE id=?",
         (status,user_id)
     )
+
     conn.commit()
+
 
 
 def find_match(user_id):
@@ -60,7 +81,8 @@ def find_match(user_id):
     WHERE searching=1
     AND id != ?
     LIMIT 1
-    """,(user_id,))
+    """,
+    (user_id,))
 
     data=cursor.fetchone()
 
