@@ -1,5 +1,6 @@
 import sqlite3
 
+
 conn = sqlite3.connect(
     "users.db",
     check_same_thread=False
@@ -73,7 +74,8 @@ def find_match(user_id):
 
     cursor.execute(
         """
-        SELECT id FROM users
+        SELECT id
+        FROM users
         WHERE searching=1
         AND id != ?
 
@@ -83,13 +85,11 @@ def find_match(user_id):
     )
 
 
-    data=cursor.fetchone()
+    data = cursor.fetchone()
 
 
     if data:
-
         return data[0]
-
 
     return None
 
@@ -121,15 +121,15 @@ def get_partner(user_id):
         (user_id,)
     )
 
-    data=cursor.fetchone()
+
+    data = cursor.fetchone()
 
 
     if data:
-
         return data[0]
 
 
-    return None
+    return 0
 
 
 
@@ -140,6 +140,7 @@ def remove_partner(user_id):
         UPDATE users
         SET partner=0,
         searching=0
+
         WHERE id=?
         """,
         (user_id,)
