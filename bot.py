@@ -19,7 +19,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def relay(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Bot sedang disiapkan. Tahap selanjutnya kita deploy ke Railway.")
+   await update.message.reply_text(
+    "BOT SUDAH ONLINE RAILWAY"
+)
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
