@@ -1,273 +1,443 @@
 import os
+
 from telegram import (
     InlineKeyboardButton,
-    InlineKeyboardMarkup,
+    InlineKeyboardMarkup
 )
+
 from telegram.ext import (
     Application,
     CommandHandler,
     CallbackQueryHandler,
     MessageHandler,
-    filters,
+    filters
 )
+
 from database import *
 
+
 TOKEN = os.getenv("BOT_TOKEN")
+
 
 # =========================
 # MENU UTAMA
 # =========================
+
 menu = InlineKeyboardMarkup([
     [
-        InlineKeyboardButton("🔎 Search", callback_data="search"),
-        InlineKeyboardButton("⏭ Next", callback_data="next"),
+        InlineKeyboardButton(
+            "🔎 Search",
+            callback_data="search"
+        ),
+        InlineKeyboardButton(
+            "⏭ Next",
+            callback_data="next"
+        )
     ],
     [
-        InlineKeyboardButton("❌ End", callback_data="end"),
-        InlineKeyboardButton("🌍 Atur Region", callback_data="region"),
+        InlineKeyboardButton(
+            "❌ End",
+            callback_data="end"
+        ),
+        InlineKeyboardButton(
+            "📊 Statistik",
+            callback_data="stats"
+        )
     ]
 ])
 
-# =========================
-# MENU REGION
-# =========================
-region_menu = InlineKeyboardMarkup([
-    [InlineKeyboardButton("🇮🇩 Sumatra", callback_data="Sumatra")],
-    [InlineKeyboardButton("🇮🇩 Jawa", callback_data="Jawa")],
-    [InlineKeyboardButton("🇮🇩 Kalimantan", callback_data="Kalimantan")],
-    [InlineKeyboardButton("🇮🇩 Bali & Nusa Tenggara", callback_data="Bali & Nusa Tenggara")],
-    [InlineKeyboardButton("🇮🇩 Sulawesi", callback_data="Sulawesi")],
-    [InlineKeyboardButton("🇮🇩 Maluku & Papua", callback_data="Maluku & Papua")],
-])
 
 # =========================
 # START
 # =========================
+
 async def start(update, context):
+
     user = update.effective_user
+
     add_user(user.id)
+
 
     await update.message.reply_text(
 f"""
-💙 **INDOANONYM BOT**
+💙 INDOANONYM BOT
 
 Halo {user.first_name} 👋
 
-**Kamu cari teman baru yang asik?**
 
-Temukan teman ngobrol anonim dari region yang sama dan mulai percakapan tanpa ribet.
+Kamu cari teman baru yang asik?
 
-**Join group & channel public**
+Temukan teman ngobrol baru secara anonymous.
+
+
+Join group & channel public:
 
 👥 Group:
 https://t.me/sirkelindoanonym
 
+
 📢 Channel:
 https://t.me/infomutualan
 
-Silakan gunakan menu di bawah ini.
+
+Silakan pilih menu di bawah 👇
 """,
-        reply_markup=menu,
-        parse_mode="Markdown"
+        reply_markup=menu
     )
 
+
 # =========================
-# SEARCH
+# SEARCH MATCH
 # =========================
+
 async def search_match(update, context):
+
     if update.callback_query:
+
         user = update.callback_query.from_user.id
         send = update.callback_query.message.reply_text
+
     else:
+
         user = update.effective_user.id
         send = update.message.reply_text
 
-    region = get_region(user)
 
-    if not region:
-        await send(
-            "🌍 Kamu belum memilih region. Silakan pilih **Atur Region** terlebih dahulu.",
-            reply_markup=region_menu,
-            parse_mode="Markdown"
-        )
-        return
 
-    set_search(user, 1)
-    partner = find_match(user, region)
+    set_search(user,1)
+
+
+    partner = find_match(user)
+
+
 
     if partner:
-        set_search(user, 0)
-        set_search(partner, 0)
 
-        set_partner(user, partner)
-        set_partner(partner, user)
+
+        set_search(user,0)
+        set_search(partner,0)
+
+
+        set_partner(user,partner)
+        set_partner(partner,user)
+
+
 
         await send(
-f"""
-🎉 **MATCH DITEMUKAN!**
+"""
+🎉 MATCH DITEMUKAN!
 
-🌍 Region: **{region}**
-
-Kamu sudah terhubung dengan pengguna dari region yang sama.
+Kamu sudah terhubung.
 
 Silakan mulai chat 💬
 """,
-            reply_markup=menu,
-            parse_mode="Markdown"
+            reply_markup=menu
         )
+
 
         await context.bot.send_message(
             partner,
-f"""
-🎉 **MATCH DITEMUKAN!**
+"""
+🎉 MATCH DITEMUKAN!
 
-🌍 Region: **{region}**
-
-Kamu sudah terhubung dengan pengguna dari region yang sama.
+Kamu sudah terhubung.
 
 Silakan mulai chat 💬
 """,
-            reply_markup=menu,
-            parse_mode="Markdown"
+            reply_markup=menu
         )
+
+
     else:
+
+
         await send(
-f"""
-🔎 **Sedang mencari partner...**
+"""
+🔎 Sedang mencari teman...
 
-🌍 Region: **{region}**
-
-Mohon tunggu sebentar, kami sedang mencari teman yang cocok untukmu.
+Mohon tunggu pengguna lain.
 """,
-            reply_markup=menu,
-            parse_mode="Markdown"
+            reply_markup=menu
         )
+
 
 # =========================
 # NEXT
 # =========================
+
 async def next_match(update, context):
+
     user = update.effective_user.id
-    old_partner = get_partner(user)
 
-    if old_partner:
-        remove_partner(user)
-        remove_partner(old_partner)
 
-        await context.bot.send_message(
-            old_partner,
-            "⏭ Partner kamu telah mencari teman baru.",
-            reply_markup=menu
-        )
-
-    await search_match(update, context)
-
-# =========================
-# END
-# =========================
-async def end_chat(update, context):
-    user = update.effective_user.id
     partner = get_partner(user)
 
+
+
     if partner:
+
+
         remove_partner(user)
         remove_partner(partner)
 
+
+
         await context.bot.send_message(
             partner,
-            "❌ Chat telah berakhir.\\n\\nMau mencari teman baru?",
+"""
+⏭ Partner kamu mencari teman baru.
+
+Chat selesai.
+""",
             reply_markup=menu
         )
 
+
+
+    await search_match(
+        update,
+        context
+    )
+
+
+
+# =========================
+# END CHAT
+# =========================
+
+async def end_chat(update, context):
+
+    user = update.effective_user.id
+
+
+    partner = get_partner(user)
+
+
+
+    if partner:
+
+
+        remove_partner(user)
+        remove_partner(partner)
+
+
+
+        await context.bot.send_message(
+            partner,
+"""
+❌ Chat selesai.
+
+Terima kasih sudah menggunakan IndoAnonym.
+""",
+            reply_markup=menu
+        )
+
+
+
     if update.callback_query:
+
+
         await update.callback_query.message.reply_text(
-            "❌ Chat selesai.\\n\\nPilih menu di bawah ini.",
+"""
+❌ Chat telah berakhir.
+
+Mau cari teman baru?
+""",
             reply_markup=menu
         )
+
+
     else:
+
+
         await update.message.reply_text(
-            "❌ Chat selesai.\\n\\nPilih menu di bawah ini.",
+"""
+❌ Chat telah berakhir.
+
+Mau cari teman baru?
+""",
             reply_markup=menu
         )
+
+
+
+# =========================
+# STATISTIK
+# =========================
+
+async def stats(update, context):
+
+    total = total_users()
+
+    search = searching_users()
+
+    active = active_chat()
+
+
+
+    await update.callback_query.message.reply_text(
+f"""
+📊 STATISTIK BOT
+
+👥 Total Pengguna:
+{total}
+
+🔎 Sedang mencari:
+{search}
+
+💬 Chat aktif:
+{active}
+""",
+        reply_markup=menu
+    )
+
+
 
 # =========================
 # BUTTON
 # =========================
+
 async def button(update, context):
+
     query = update.callback_query
+
+
     await query.answer()
-    user = query.from_user.id
+
+
 
     if query.data == "search":
-        await search_match(update, context)
+
+        await search_match(
+            update,
+            context
+        )
+
 
     elif query.data == "next":
-        await next_match(update, context)
+
+        await next_match(
+            update,
+            context
+        )
+
 
     elif query.data == "end":
-        await end_chat(update, context)
 
-    elif query.data == "region":
-        await query.message.reply_text(
-            "🌍 **Pilih region kamu**",
-            reply_markup=region_menu,
-            parse_mode="Markdown"
+        await end_chat(
+            update,
+            context
         )
 
-    elif query.data in [
-        "Sumatra",
-        "Jawa",
-        "Kalimantan",
-        "Bali & Nusa Tenggara",
-        "Sulawesi",
-        "Maluku & Papua"
-    ]:
-        save_region(user, query.data)
 
-        await query.message.reply_text(
-f"""
-✅ Region berhasil disimpan
+    elif query.data == "stats":
 
-🌍 **{query.data}**
-
-Sekarang kamu akan dipasangkan dengan pengguna dari region yang sama.
-""",
-            reply_markup=menu,
-            parse_mode="Markdown"
+        await stats(
+            update,
+            context
         )
+
+
 
 # =========================
 # RELAY CHAT
 # =========================
+
 async def relay(update, context):
+
     user = update.effective_user.id
+
+
     partner = get_partner(user)
 
+
+
     if partner:
-        await context.bot.send_message(partner, update.message.text)
-    else:
-        await update.message.reply_text(
-            "Kamu belum memiliki partner.\\n\\nKlik **🔎 Search** untuk mencari teman baru.",
-            reply_markup=menu,
-            parse_mode="Markdown"
+
+
+        await context.bot.send_message(
+            partner,
+            update.message.text
         )
+
+
+    else:
+
+
+        await update.message.reply_text(
+"""
+Kamu belum memiliki partner.
+
+Klik 🔎 Search untuk mencari teman.
+""",
+            reply_markup=menu
+        )
+
+
 
 # =========================
 # MAIN
 # =========================
+
 def main():
+
     init_db()
+
 
     app = Application.builder().token(TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("next", next_match))
-    app.add_handler(CommandHandler("end", end_chat))
-    app.add_handler(CallbackQueryHandler(button))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, relay))
 
-    print("💙 INDOANONYM BOT ONLINE")
+
+    app.add_handler(
+        CommandHandler(
+            "start",
+            start
+        )
+    )
+
+
+    app.add_handler(
+        CommandHandler(
+            "next",
+            next_match
+        )
+    )
+
+
+    app.add_handler(
+        CommandHandler(
+            "end",
+            end_chat
+        )
+    )
+
+
+    app.add_handler(
+        CallbackQueryHandler(
+            button
+        )
+    )
+
+
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            relay
+        )
+    )
+
+
+
+    print(
+        "💙 INDOANONYM BOT ONLINE"
+    )
+
+
+
     app.run_polling()
 
+
+
 if __name__ == "__main__":
+
     main()
