@@ -39,10 +39,6 @@ menu = InlineKeyboardMarkup([
             "❌ End",
             callback_data="end"
         ),
-        InlineKeyboardButton(
-            "📊 Statistik",
-            callback_data="stats"
-        )
     ]
 ])
 
