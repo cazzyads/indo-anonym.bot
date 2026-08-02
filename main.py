@@ -38,7 +38,7 @@ menu = InlineKeyboardMarkup([
         InlineKeyboardButton(
             "❌ End",
             callback_data="end"
-        ),
+        )
     ]
 ])
 
@@ -63,10 +63,12 @@ Halo {user.first_name} 👋
 
 Kamu cari teman baru yang asik?
 
+
 Temukan teman ngobrol baru secara anonymous.
 
 
 Join group & channel public:
+
 
 👥 Group:
 https://t.me/sirkelindoanonym
@@ -76,14 +78,15 @@ https://t.me/sirkelindoanonym
 https://t.me/infomutualan
 
 
-Silakan pilih menu di bawah 👇
+Silakan gunakan menu di bawah 👇
 """,
         reply_markup=menu
     )
 
 
+
 # =========================
-# SEARCH MATCH
+# SEARCH
 # =========================
 
 async def search_match(update, context):
@@ -100,7 +103,7 @@ async def search_match(update, context):
 
 
 
-    set_search(user,1)
+    set_search(user, 1)
 
 
     partner = find_match(user)
@@ -110,12 +113,12 @@ async def search_match(update, context):
     if partner:
 
 
-        set_search(user,0)
-        set_search(partner,0)
+        set_search(user, 0)
+        set_search(partner, 0)
 
 
-        set_partner(user,partner)
-        set_partner(partner,user)
+        set_partner(user, partner)
+        set_partner(partner, user)
 
 
 
@@ -123,7 +126,7 @@ async def search_match(update, context):
 """
 🎉 MATCH DITEMUKAN!
 
-Kamu sudah terhubung.
+Kamu sudah terhubung dengan teman baru.
 
 Silakan mulai chat 💬
 """,
@@ -131,12 +134,13 @@ Silakan mulai chat 💬
         )
 
 
+
         await context.bot.send_message(
             partner,
 """
 🎉 MATCH DITEMUKAN!
 
-Kamu sudah terhubung.
+Kamu sudah terhubung dengan teman baru.
 
 Silakan mulai chat 💬
 """,
@@ -151,10 +155,11 @@ Silakan mulai chat 💬
 """
 🔎 Sedang mencari teman...
 
-Mohon tunggu pengguna lain.
+Mohon tunggu pengguna lain bergabung.
 """,
             reply_markup=menu
         )
+
 
 
 # =========================
@@ -221,7 +226,7 @@ async def end_chat(update, context):
         await context.bot.send_message(
             partner,
 """
-❌ Chat selesai.
+❌ Chat telah berakhir.
 
 Terima kasih sudah menggunakan IndoAnonym.
 """,
@@ -235,9 +240,9 @@ Terima kasih sudah menggunakan IndoAnonym.
 
         await update.callback_query.message.reply_text(
 """
-❌ Chat telah berakhir.
+❌ Chat selesai.
 
-Mau cari teman baru?
+Mau mencari teman baru?
 """,
             reply_markup=menu
         )
@@ -248,44 +253,12 @@ Mau cari teman baru?
 
         await update.message.reply_text(
 """
-❌ Chat telah berakhir.
+❌ Chat selesai.
 
-Mau cari teman baru?
+Mau mencari teman baru?
 """,
             reply_markup=menu
         )
-
-
-
-# =========================
-# STATISTIK
-# =========================
-
-async def stats(update, context):
-
-    total = total_users()
-
-    search = searching_users()
-
-    active = active_chat()
-
-
-
-    await update.callback_query.message.reply_text(
-f"""
-📊 STATISTIK BOT
-
-👥 Total Pengguna:
-{total}
-
-🔎 Sedang mencari:
-{search}
-
-💬 Chat aktif:
-{active}
-""",
-        reply_markup=menu
-    )
 
 
 
@@ -326,17 +299,9 @@ async def button(update, context):
         )
 
 
-    elif query.data == "stats":
-
-        await stats(
-            update,
-            context
-        )
-
-
 
 # =========================
-# RELAY CHAT
+# CHAT RELAY
 # =========================
 
 async def relay(update, context):
@@ -364,7 +329,7 @@ async def relay(update, context):
 """
 Kamu belum memiliki partner.
 
-Klik 🔎 Search untuk mencari teman.
+Klik 🔎 Search untuk mencari teman baru.
 """,
             reply_markup=menu
         )
@@ -423,11 +388,9 @@ def main():
     )
 
 
-
     print(
         "💙 INDOANONYM BOT ONLINE"
     )
-
 
 
     app.run_polling()
