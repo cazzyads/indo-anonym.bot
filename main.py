@@ -71,11 +71,11 @@ Join group & channel public:
 
 
 👥 Group:
-https://t.me/sirkelindoanonym
+https://t.me/coustry
 
 
 📢 Channel:
-https://t.me/infomutualan
+https://t.me/officiallcoustry
 
 
 Silakan gunakan menu di bawah 👇
